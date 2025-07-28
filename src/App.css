@@ -1,0 +1,8 @@
+.sensor-text {
+    display: inline
+}
+
+tr td:first-of-type {
+    width: px;
+    text-align: left;
+}
