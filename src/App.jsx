@@ -1,9 +1,13 @@
-import SensorContainer from "./components/ListGroup";
+import Logger from "./components/Logger.jsx";
+import MenuBar from "./components/MenuBar.jsx";
+import SensorData from "./components/SensorData.jsx";
 
 function App() {
   return (
     <div>
-      <SensorContainer />
+      <MenuBar />
+      <SensorData />
+      <Logger />
     </div>
   );
 }
