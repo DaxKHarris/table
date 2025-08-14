@@ -1,5 +1,5 @@
 import MenuBar from "../common/MenuBar";
-import InputForm from "../forms/InputForm";
+import InputForm from "../forms/LoginForm";
 
 export default function Login({ onSuccess }) {
   return (

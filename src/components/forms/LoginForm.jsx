@@ -29,7 +29,7 @@ export default function InputForm({ onSuccess }) {
   return (
     <form onSubmit={handleSubmit}>
       <input type="text" ref={userRef} placeholder="Username" />
-      <input type="text" ref={passRef} placeholder="Password" />
+      <input type="password" ref={passRef} placeholder="Password" />
       <button>Login</button>
     </form>
   );
