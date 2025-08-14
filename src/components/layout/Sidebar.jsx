@@ -41,7 +41,8 @@ export default function Sidebar() {
 
       <div className="profile">
         <img src={myIcon} height="25px"></img>
-        <p style={{ display: "inline;" }}>DaxKHarris</p>
+        <p style={{ display: "inline" }}>DaxKHarris</p>{" "}
+        {/* Replace profile dynamically */}
         {/*Make the image a circle later*/}
       </div>
       <img src={myImage} height="50px"></img>

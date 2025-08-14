@@ -1,6 +1,4 @@
 import { useState } from "react";
-import myImage from "../../assets/ayt_icon.png";
-import myText from "../../assets/ayt_text.png";
 function MenuBar() {
   let auth = false;
   const items = ["Dashboard", "Settings", "Hey", "Larry The Cucumber"];
