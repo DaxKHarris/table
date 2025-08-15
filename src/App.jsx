@@ -1,13 +1,9 @@
+import Sidebar from "./components/layout/Sidebar";
 import { useAuth } from "./hooks/useAuth";
-import Dashboard from "./components/layout/Dashboard";
-import Login from "./components/layout/Login";
-
+import PlantDashboard from "./pages/device/SensorData";
+import MainBoard from "./pages/Dashboard";
+import Login from "./pages/Login";
 export default function App() {
-  const { authed, loading, handleLoginSuccess } = useAuth();
-
-  if (loading) {
-    return <div>Loading...</div>; // or your loading component
-  }
-
-  return authed ? <Dashboard /> : <Login onSuccess={handleLoginSuccess} />;
+  let userAuthed = true;
+  return <>{userAuthed ? <MainBoard /> : <Login />}</>;
 }

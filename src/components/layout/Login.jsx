@@ -1,10 +1,10 @@
-import MenuBar from "../common/MenuBar";
-import InputForm from "../forms/LoginForm";
+import InputForm from "../../pages/Login/LoginForm";
+import Sidebar from "./Sidebar";
 
 export default function Login({ onSuccess }) {
   return (
     <>
-      <MenuBar />
+      <Sidebar />
       <InputForm onSuccess={onSuccess} />
     </>
   );

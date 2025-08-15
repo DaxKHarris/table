@@ -1,24 +1,7 @@
-body {
-  margin: 0
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.sensor-text {
-    display: inline
-}
-
-tr td:first-of-type {
-    width: 300px;
-    text-align: left;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-}
-
-.time-time, .logo-text {
-  display: inline;
-}
-
-.menu {
-  background-color: #03ab62;
-}
+/* body {
+  background-color: gray;
+} */
