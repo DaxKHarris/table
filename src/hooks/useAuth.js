@@ -5,17 +5,15 @@ export function useAuth() {
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
     (async () => {
       try {
-        const user = await localAuth(); // Check for existing session/cookie
+        const user = await localAuth();
         if (user) {
-          setAuthed(false); // I changed this var so that login would not persist!
+          setAuthed(true); // Fix: change back to true for persistence
         }
       } catch (error) {
         console.error('Session check failed:', error);
-        // If session check fails, user remains unauthenticated
       } finally {
         setLoading(false);
       }
@@ -28,8 +26,6 @@ export function useAuth() {
 
   const handleLogout = () => {
     setAuthed(false);
-    // You might want to call a logout service here to clear cookies/session
-    // await logoutService();
   };
 
   return {

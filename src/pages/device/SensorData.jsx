@@ -146,7 +146,7 @@ const PlantDashboard = () => {
               timestamp: Date.now(),
               type: types[Math.floor(Math.random() * types.length)],
             },
-          ].slice(-5)
+          ].slice(-10)
         ); // Keep only last 5 messages, new ones at bottom
       }
     }, 5000);
