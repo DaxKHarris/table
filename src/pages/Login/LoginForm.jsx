@@ -1,5 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import getUserAuth from "../../services/authService";
+import login from "../../assets/login.png";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm({ onSuccess }) {
   const userRef = useRef();
@@ -69,8 +71,8 @@ export default function LoginForm({ onSuccess }) {
       <div
         style={{
           width: "100%",
-          maxWidth: isMobile ? "500px" : "1200px",
-          height: isMobile ? "auto" : "700px",
+          maxWidth: isMobile ? "500px" : "80vw",
+          height: isMobile ? "auto" : "75vh",
           minHeight: isMobile ? "500px" : "auto",
           background: isMobile
             ? "linear-gradient(135deg, #059669 0%, #047857 100%)"
@@ -84,14 +86,14 @@ export default function LoginForm({ onSuccess }) {
         {/* Left Side - Login Form */}
         <div
           style={{
-            flex: isMobile ? "1" : "1",
+            flex: isMobile ? "1" : "-1",
             background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
             padding: isMobile ? "40px 30px" : "80px 60px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             position: "relative",
-            width: isMobile ? "100%" : "auto",
+            width: isMobile ? "100%" : "35%",
           }}
         >
           {/* Welcome Text */}
@@ -189,6 +191,7 @@ export default function LoginForm({ onSuccess }) {
                       : "15px 50px 15px 20px",
                     background: "rgba(255, 255, 255, 0.15)",
                     border: "1px solid rgba(255, 255, 255, 0.3)",
+                    // marg",
                     borderRadius: "12px",
                     color: "white",
                     fontSize: isMobile ? "16px" : "16px",
@@ -220,10 +223,10 @@ export default function LoginForm({ onSuccess }) {
                     color: "rgba(255, 255, 255, 0.7)",
                     cursor: "pointer",
                     fontSize: isMobile ? "16px" : "18px",
-                    padding: "5px",
+                    padding: "0px",
                   }}
                 >
-                  {showPassword ? "🙈" : "👁️"}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
@@ -330,7 +333,7 @@ export default function LoginForm({ onSuccess }) {
         {!isMobile && (
           <div
             style={{
-              flex: "1",
+              flex: "-1",
               background: "#f3f4f6",
               display: "flex",
               alignItems: "center",
@@ -340,37 +343,21 @@ export default function LoginForm({ onSuccess }) {
             }}
           >
             {/* IMAGE PLACEHOLDER - Replace this div with your image */}
-            <div
+            <img
+              src={login}
+              alt="Heyo!"
               style={{
                 width: "100%",
                 height: "100%",
-                background: "#e5e7eb",
                 borderRadius: "20px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "18px",
-                color: "#6b7280",
                 textAlign: "center",
-                border: "2px dashed #9ca3af",
+                border: "2px solid #9ca3af",
               }}
-            >
-              Replace this div with:
-              <br />
-              <strong>
-                &lt;img src="your-image.jpg" style=&#123;&#123;
-                <br />
-                width: '100%',
-                <br />
-                height: '100%',
-                <br />
-                objectFit: 'cover',
-                <br />
-                borderRadius: '20px'
-                <br />
-                &#125;&#125; /&gt;
-              </strong>
-            </div>
+            ></img>
           </div>
         )}
       </div>
