@@ -478,13 +478,14 @@ export default function Dashboard() {
         method: "GET",
         credentials: "include",
       });
-
       if (!response.ok) {
         throw new Error("Failed to fetch devices");
       }
+      const apiResponse = await response.json();
+      console.log("API Response:", apiResponse); // Debug log
 
-      const data = await response.json();
-      console.log("API Response:", data); // Debug log
+      // Extract the data array from the wrapped response
+      const data = apiResponse.data || apiResponse;
 
       // Handle empty array or array of devices
       if (Array.isArray(data)) {
