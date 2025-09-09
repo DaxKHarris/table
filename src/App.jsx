@@ -1,72 +1,40 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { checkAuthStatus } from "./services/authService";
+
+// Import pages
 import MainBoard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import DevicePage from "./pages/DevicePage";
-import { checkAuthStatus, logoutUser } from "./services/authService"; // Adjust path as needed
+import CreateAccount from "./pages/CreateAccount"; // You'll need to create this
+import ForgotPassword from "./pages/ForgotPassword"; // You'll need to create this
 
-export default function App() {
-  const [userAuthed, setUserAuthed] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState("dashboard");
-  const [selectedDevice, setSelectedDevice] = useState(null);
+// Protected Route wrapper component
+function ProtectedRoute({ children }) {
+  const [authStatus, setAuthStatus] = useState("loading");
+  const [intendedPath, setIntendedPath] = useState(null);
 
-  // Check auth status on mount (session cookie validation)
   useEffect(() => {
     const verifyAuth = async () => {
       try {
-        // This should check if the session cookie is valid
-        // The cookie is automatically included in the request
         const isAuthenticated = await checkAuthStatus();
-        setUserAuthed(isAuthenticated);
+        setAuthStatus(isAuthenticated ? "authenticated" : "unauthenticated");
+
+        // If not authenticated, save the current path to redirect back later
+        if (!isAuthenticated) {
+          setIntendedPath(window.location.pathname + window.location.search);
+        }
       } catch (error) {
         console.error("Auth check failed:", error);
-        setUserAuthed(false);
-      } finally {
-        setAuthLoading(false);
+        setAuthStatus("unauthenticated");
+        setIntendedPath(window.location.pathname + window.location.search);
       }
     };
 
     verifyAuth();
   }, []);
 
-  // Handler for successful login
-  const handleLoginSuccess = () => {
-    // The login process should have already set the session cookie
-    setUserAuthed(true);
-    setCurrentPage("dashboard");
-  };
-
-  // Handler for navigating to device page
-  const handleDeviceSelect = (deviceData) => {
-    setSelectedDevice(deviceData);
-    setCurrentPage("device");
-  };
-
-  // Handler for going back to dashboard
-  const handleBackToDashboard = () => {
-    setCurrentPage("dashboard");
-    setSelectedDevice(null);
-  };
-
-  // Handler for logout
-  const handleLogout = async () => {
-    try {
-      // Call logout endpoint to clear the session cookie
-      await logoutUser();
-      setUserAuthed(false);
-      setCurrentPage("dashboard");
-      setSelectedDevice(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Even if logout fails, clear local state
-      setUserAuthed(false);
-      setCurrentPage("dashboard");
-      setSelectedDevice(null);
-    }
-  };
-
-  // Show loading state while checking auth
-  if (authLoading) {
+  if (authStatus === "loading") {
     return (
       <div
         style={{
@@ -83,24 +51,67 @@ export default function App() {
     );
   }
 
-  // If not authenticated, show login
-  if (!userAuthed) {
-    return <Login onSuccess={handleLoginSuccess} />;
-  }
-
-  // If authenticated, show appropriate page
-  if (currentPage === "device" && selectedDevice) {
+  if (authStatus === "unauthenticated") {
+    // Redirect to login with return URL
+    const returnUrl = intendedPath || window.location.pathname;
     return (
-      <DevicePage
-        device={selectedDevice}
-        onBack={handleBackToDashboard}
-        onLogout={handleLogout}
+      <Navigate
+        to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
+        replace
       />
     );
   }
 
-  // Default to dashboard
+  return children;
+}
+
+export default function App() {
   return (
-    <MainBoard onDeviceSelect={handleDeviceSelect} onLogout={handleLogout} />
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<CreateAccount />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainBoard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <MainBoard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/devices/:deviceId"
+          element={
+            <ProtectedRoute>
+              <DevicePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/devices/:deviceId/config"
+          element={
+            <ProtectedRoute>
+              {/* Add your config component here */}
+              <div>Device Config Page (To be implemented)</div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fallback - redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

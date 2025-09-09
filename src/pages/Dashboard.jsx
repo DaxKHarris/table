@@ -153,32 +153,6 @@ const PlantDeviceCard = ({
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
 
-  const statusConfigs = {
-    healthy: {
-      icon: <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />,
-      color: isDarkMode ? "text-emerald-400" : "text-emerald-600",
-      bgColor: isDarkMode ? "bg-emerald-950/50" : "bg-emerald-50",
-      borderColor: isDarkMode ? "border-emerald-800" : "border-emerald-200",
-      label: "Healthy",
-    },
-    warning: {
-      icon: <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />,
-      color: isDarkMode ? "text-amber-400" : "text-amber-600",
-      bgColor: isDarkMode ? "bg-amber-950/50" : "bg-amber-50",
-      borderColor: isDarkMode ? "border-amber-800" : "border-amber-200",
-      label: "Needs Attention",
-    },
-    offline: {
-      icon: <WifiOff className="w-3 h-3 sm:w-4 sm:h-4" />,
-      color: isDarkMode ? "text-gray-500" : "text-gray-400",
-      bgColor: isDarkMode ? "bg-gray-800/50" : "bg-gray-50",
-      borderColor: isDarkMode ? "border-gray-700" : "border-gray-200",
-      label: "Offline",
-    },
-  };
-
-  const statusConfig = statusConfigs[status] || statusConfigs.healthy;
-
   const navItems = [
     {
       icon: <History className="w-4 h-4 sm:w-5 sm:h-5" />,
