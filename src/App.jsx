@@ -6,28 +6,21 @@ import { checkAuthStatus } from "./services/authService";
 import MainBoard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import DevicePage from "./pages/DevicePage";
-import CreateAccount from "./pages/CreateAccount"; // You'll need to create this
-import ForgotPassword from "./pages/ForgotPassword"; // You'll need to create this
+import CreateAccount from "./pages/CreateAccount";
+import ForgotPassword from "./pages/ForgotPassword";
 
 // Protected Route wrapper component
 function ProtectedRoute({ children }) {
   const [authStatus, setAuthStatus] = useState("loading");
-  const [intendedPath, setIntendedPath] = useState(null);
 
   useEffect(() => {
     const verifyAuth = async () => {
       try {
         const isAuthenticated = await checkAuthStatus();
         setAuthStatus(isAuthenticated ? "authenticated" : "unauthenticated");
-
-        // If not authenticated, save the current path to redirect back later
-        if (!isAuthenticated) {
-          setIntendedPath(window.location.pathname + window.location.search);
-        }
       } catch (error) {
         console.error("Auth check failed:", error);
         setAuthStatus("unauthenticated");
-        setIntendedPath(window.location.pathname + window.location.search);
       }
     };
 
@@ -52,14 +45,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (authStatus === "unauthenticated") {
-    // Redirect to login with return URL
-    const returnUrl = intendedPath || window.location.pathname;
-    return (
-      <Navigate
-        to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -92,6 +78,30 @@ export default function App() {
           }
         />
         <Route
+          path="/dashboard/configurations"
+          element={
+            <ProtectedRoute>
+              <MainBoard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/configurations/new"
+          element={
+            <ProtectedRoute>
+              <MainBoard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/configurations/edit/:configId"
+          element={
+            <ProtectedRoute>
+              <MainBoard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/devices/:deviceId"
           element={
             <ProtectedRoute>
@@ -103,7 +113,6 @@ export default function App() {
           path="/devices/:deviceId/config"
           element={
             <ProtectedRoute>
-              {/* Add your config component here */}
               <div>Device Config Page (To be implemented)</div>
             </ProtectedRoute>
           }

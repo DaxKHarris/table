@@ -1,32 +1,32 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sprout,
   EllipsisVertical,
   Moon,
   Sun,
-  History,
+  Settings,
   Settings2,
   Home,
   Search,
-  Settings,
-  Navigation,
-  Trash2,
   Plus,
-  Droplet,
+  Loader2,
   AlertCircle,
   CheckCircle,
-  WifiOff,
-  Loader2,
-  Leaf,
   TreePine,
+  Leaf,
+  ArrowLeft,
+  Edit,
+  Trash2,
 } from "lucide-react";
+import PlantDeviceCard from "./dashboard/DeviceCards";
 
 // Sidebar Component
 const Sidebar = ({ isDarkMode, setIsDarkMode }) => {
   const navItems = [
     { icon: Home, label: "Home" },
     { icon: Search, label: "Search" },
-    { icon: History, label: "History" },
+    { icon: Settings, label: "Configurations" },
     { icon: Settings2, label: "Settings" },
     { icon: EllipsisVertical, label: "More" },
   ];
@@ -51,13 +51,11 @@ const Sidebar = ({ isDarkMode, setIsDarkMode }) => {
         } border-b overflow-hidden`}
       >
         <div className="flex items-center gap-3">
-          {/* Logo Icon - Always visible */}
           <div className="w-8 h-8 flex-shrink-0 relative">
             <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
               <Leaf className="w-5 h-5 text-white" />
             </div>
           </div>
-          {/* Logo Text - Only visible when expanded */}
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap text-lg font-bold text-white">
             PlantCare Pro
           </span>
@@ -136,301 +134,229 @@ const Sidebar = ({ isDarkMode, setIsDarkMode }) => {
   );
 };
 
-// PlantDeviceCard Component
-const PlantDeviceCard = ({
-  plantName = "Monstera Deliciosa",
-  location = "Living Room",
-  status = "healthy",
-  onCardClick,
-  onHistoryClick,
-  onConfigClick,
-  onNavigateClick,
-  onRemoveClick,
-  onAddDevice,
-  isAddCard = false,
-  isDarkMode = false,
-}) => {
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
-  const [hoveredIcon, setHoveredIcon] = useState(null);
+// Configuration List Component
+const ConfigurationsList = ({ isDarkMode, onEditConfig, onNewConfig }) => {
+  const [configs, setConfigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const navItems = [
-    {
-      icon: <History className="w-4 h-4 sm:w-5 sm:h-5" />,
-      label: "View History",
-      action: onHistoryClick,
-    },
-    {
-      icon: <Settings className="w-4 h-4 sm:w-5 sm:h-5" />,
-      label: "Configuration",
-      action: onConfigClick,
-    },
-    {
-      icon: <Navigation className="w-4 h-4 sm:w-5 sm:h-5" />,
-      label: "Go to Plant",
-      action: onNavigateClick,
-    },
-    {
-      icon: <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />,
-      label: "Remove",
-      action: onRemoveClick,
-      danger: true,
-    },
-  ];
+  useEffect(() => {
+    fetchConfigs();
+  }, []);
 
-  const handleCardClick = (e) => {
-    if (!e.target.closest(".nav-menu") && onCardClick) {
-      onCardClick();
+  const fetchConfigs = async () => {
+    try {
+      const response = await fetch("/api/configurations", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch configurations");
+      }
+      const data = await response.json();
+      setConfigs(Array.isArray(data) ? data : data.data || []);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching configurations:", err);
+      setError(err.message);
+      setConfigs([]);
+      setLoading(false);
     }
   };
 
-  if (isAddCard) {
+  const handleDeleteConfig = async (configId) => {
+    if (
+      !window.confirm("Are you sure you want to delete this configuration?")
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/configurations/${configId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (response.ok) {
+        setConfigs(configs.filter((config) => config.id !== configId));
+      }
+    } catch (err) {
+      console.error("Error deleting configuration:", err);
+    }
+  };
+
+  if (loading) {
     return (
-      <div
-        onClick={onAddDevice}
-        className={`w-full aspect-[3/4] sm:aspect-[4/5] ${
-          isDarkMode
-            ? "bg-gray-800 border-gray-700 hover:border-emerald-600"
-            : "bg-white border-gray-300 hover:border-emerald-400"
-        } rounded-xl shadow-lg border-2 border-dashed hover:shadow-xl transition-all duration-300 cursor-pointer group`}
-      >
-        <div className="h-full flex flex-col items-center justify-center">
-          <div
-            className={`w-12 h-12 sm:w-16 sm:h-16 ${
-              isDarkMode
-                ? "bg-gray-700 group-hover:bg-emerald-950"
-                : "bg-gray-100 group-hover:bg-emerald-50"
-            } rounded-full flex items-center justify-center transition-colors duration-300 mb-2 sm:mb-3`}
-          >
-            <Plus
-              className={`w-6 h-6 sm:w-8 sm:h-8 ${
-                isDarkMode
-                  ? "text-gray-400 group-hover:text-emerald-400"
-                  : "text-gray-400 group-hover:text-emerald-500"
-              } transition-colors duration-300`}
-            />
-          </div>
-          <p
-            className={`text-xs sm:text-sm font-medium ${
-              isDarkMode
-                ? "text-gray-300 group-hover:text-emerald-400"
-                : "text-gray-600 group-hover:text-emerald-600"
-            } transition-colors duration-300`}
-          >
-            Add Device
-          </p>
-          <p
-            className={`text-[10px] sm:text-xs ${
-              isDarkMode ? "text-gray-500" : "text-gray-400"
-            } mt-1`}
-          >
-            Connect new plant
-          </p>
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <Loader2
+          className={`w-8 h-8 ${
+            isDarkMode ? "text-emerald-400" : "text-emerald-500"
+          } animate-spin`}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <p className={`${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+          Failed to load configurations
+        </p>
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          } mt-2`}
+        >
+          {error}
+        </p>
+      </div>
+    );
+  }
+
+  if (configs.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <Settings
+          className={`w-12 h-12 ${
+            isDarkMode ? "text-gray-600" : "text-gray-400"
+          } mx-auto mb-4`}
+        />
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          } mb-6`}
+        >
+          No configurations found
+        </p>
+        <button
+          onClick={onNewConfig}
+          className={`px-4 py-2 ${
+            isDarkMode
+              ? "bg-emerald-700 hover:bg-emerald-600"
+              : "bg-emerald-500 hover:bg-emerald-600"
+          } text-white rounded-lg transition-colors inline-flex items-center gap-2`}
+        >
+          <Plus className="w-4 h-4" />
+          Create Your First Configuration
+        </button>
       </div>
     );
   }
 
   return (
-    <div
-      className="relative flex items-center group/card"
-      onMouseEnter={() => setIsMenuVisible(true)}
-      onMouseLeave={() => {
-        setIsMenuVisible(false);
-        setHoveredIcon(null);
-      }}
-    >
-      <div
-        onClick={handleCardClick}
-        className={`w-full aspect-[3/4] sm:aspect-[4/5] ${
-          isDarkMode ? "bg-gray-800" : "bg-white"
-        } rounded-xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${
-          statusConfig.borderColor
-        } border-2 flex flex-col`}
-      >
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {configs.map((config) => (
         <div
-          className={`flex-1 ${
-            isDarkMode
-              ? "bg-gradient-to-br from-emerald-900 to-emerald-950"
-              : "bg-gradient-to-br from-emerald-100 to-green-50"
-          } rounded-t-lg overflow-hidden flex items-center justify-center relative`}
-        >
-          <svg
-            className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20"
-            viewBox="0 0 80 80"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <g transform="translate(20, 15) scale(0.8)">
-              <path
-                d="M25 45 Q25 35 25 25"
-                stroke={isDarkMode ? "#4ade80" : "#2d5016"}
-                strokeWidth="2"
-                fill="none"
-              />
-              <path
-                d="M25 40 Q15 35 10 25 Q12 30 15 32 Q20 35 25 40"
-                fill={isDarkMode ? "#22c55e" : "#7cb342"}
-                opacity="0.9"
-              />
-              <path
-                d="M25 40 Q15 35 10 25"
-                stroke={isDarkMode ? "#16a34a" : "#5b8c2a"}
-                strokeWidth="1"
-                fill="none"
-              />
-              <path
-                d="M25 40 Q35 35 40 25 Q38 30 35 32 Q30 35 25 40"
-                fill={isDarkMode ? "#4ade80" : "#8bc34a"}
-                opacity="0.9"
-              />
-              <path
-                d="M25 40 Q35 35 40 25"
-                stroke={isDarkMode ? "#16a34a" : "#5b8c2a"}
-                strokeWidth="1"
-                fill="none"
-              />
-              <path
-                d="M25 30 Q18 25 13 15 Q15 20 18 23 Q22 26 25 30"
-                fill={isDarkMode ? "#86efac" : "#9ccc65"}
-                opacity="0.9"
-              />
-              <path
-                d="M25 30 Q18 25 13 15"
-                stroke={isDarkMode ? "#22c55e" : "#689f38"}
-                strokeWidth="1"
-                fill="none"
-              />
-              <path
-                d="M25 30 Q32 25 37 15 Q35 20 32 23 Q28 26 25 30"
-                fill={isDarkMode ? "#86efac" : "#9ccc65"}
-                opacity="0.9"
-              />
-              <path
-                d="M25 30 Q32 25 37 15"
-                stroke={isDarkMode ? "#22c55e" : "#689f38"}
-                strokeWidth="1"
-                fill="none"
-              />
-              <path
-                d="M25 25 Q25 15 25 5 Q24 12 23 16 Q24 20 25 25"
-                fill={isDarkMode ? "#bbf7d0" : "#aed581"}
-                opacity="0.95"
-              />
-              <path
-                d="M25 25 Q25 15 25 5"
-                stroke={isDarkMode ? "#4ade80" : "#7cb342"}
-                strokeWidth="1"
-                fill="none"
-              />
-            </g>
-          </svg>
-
-          <div
-            className={`absolute top-1 right-1 sm:top-2 sm:right-2 ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            } rounded-full p-1 sm:p-1.5 shadow-sm`}
-          >
-            <Droplet className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 fill-blue-400" />
-          </div>
-          <div
-            className={`absolute top-1 left-1 sm:top-2 sm:left-2 ${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            } rounded-full p-1 sm:p-1.5 shadow-sm`}
-          >
-            <Sun className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
-          </div>
-        </div>
-
-        <div className="p-2 sm:p-3 md:p-4">
-          <div
-            className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color} mb-1.5 sm:mb-2 md:mb-3`}
-          >
-            {statusConfig.icon}
-            <span className="hidden sm:inline">{statusConfig.label}</span>
-            <span className="sm:hidden">
-              {status === "healthy"
-                ? "OK"
-                : status === "warning"
-                ? "Alert"
-                : "Off"}
-            </span>
-          </div>
-
-          <h3
-            className={`font-semibold ${
-              isDarkMode ? "text-gray-100" : "text-gray-800"
-            } text-xs sm:text-sm truncate`}
-          >
-            {plantName}
-          </h3>
-          <p
-            className={`text-[10px] sm:text-xs ${
-              isDarkMode ? "text-gray-400" : "text-gray-500"
-            } mt-0.5`}
-          >
-            {location}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className={`nav-menu absolute left-full top-1/2 -translate-y-1/2 ml-2 transition-all duration-300 hidden lg:block ${
-          isMenuVisible
-            ? "opacity-100 translate-x-0"
-            : "opacity-0 -translate-x-2 pointer-events-none"
-        }`}
-      >
-        <div
+          key={config.id}
           className={`${
-            isDarkMode ? "bg-gray-800" : "bg-white"
-          } rounded-lg shadow-xl p-1 flex flex-col gap-1`}
+            isDarkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          } rounded-xl border p-6 hover:shadow-lg transition-all duration-300`}
         >
-          {navItems.map((item, index) => (
-            <div
-              key={index}
-              className="relative"
-              onMouseEnter={() => setHoveredIcon(index)}
-              onMouseLeave={() => setHoveredIcon(null)}
+          <div className="flex items-start justify-between mb-4">
+            <h3
+              className={`font-semibold text-lg ${
+                isDarkMode ? "text-gray-100" : "text-gray-800"
+              }`}
             >
+              {config.name}
+            </h3>
+            <div className="flex items-center gap-2">
               <button
-                className={`p-2 sm:p-2.5 rounded-lg transition-all duration-200 ${
-                  item.danger
-                    ? isDarkMode
-                      ? "hover:bg-red-950/50 hover:text-red-400 text-gray-400"
-                      : "hover:bg-red-50 hover:text-red-500 text-gray-600"
-                    : isDarkMode
-                    ? "hover:bg-gray-700 hover:text-gray-200 text-gray-400"
-                    : "hover:bg-gray-100 hover:text-gray-700 text-gray-600"
+                onClick={() => onEditConfig(config)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode
+                    ? "text-gray-400 hover:text-emerald-400 hover:bg-emerald-950/50"
+                    : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                 }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (item.action) item.action();
-                }}
               >
-                {item.icon}
+                <Edit className="w-4 h-4" />
               </button>
-
-              <div
-                className={`absolute left-full ml-2 top-1/2 -translate-y-1/2 transition-all duration-200 ${
-                  hoveredIcon === index
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 -translate-x-2 pointer-events-none"
+              <button
+                onClick={() => handleDeleteConfig(config.id)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode
+                    ? "text-gray-400 hover:text-red-400 hover:bg-red-950/50"
+                    : "text-gray-600 hover:text-red-600 hover:bg-red-50"
                 }`}
               >
-                <div
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span
                   className={`${
-                    isDarkMode
-                      ? "bg-gray-700 text-gray-100"
-                      : "bg-gray-800 text-white"
-                  } text-xs px-2 py-1 rounded whitespace-nowrap`}
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
                 >
-                  {item.label}
+                  Created
+                </span>
+                <div
+                  className={`font-medium ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {new Date(config.created_at).toLocaleDateString()}
+                </div>
+              </div>
+              <div>
+                <span
+                  className={`${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Version
+                </span>
+                <div
+                  className={`font-medium ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {config.version}
+                </div>
+              </div>
+              <div>
+                <span
+                  className={`${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Sections
+                </span>
+                <div
+                  className={`font-medium ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {config.sections?.length || 0}
+                </div>
+              </div>
+              <div>
+                <span
+                  className={`${
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Status
+                </span>
+                <div
+                  className={`font-medium ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  Active
                 </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 };
@@ -442,9 +368,19 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Determine current view from URL
+  const isConfigView = location.pathname.includes("/configurations");
+  const isConfigEditor =
+    location.pathname.includes("/edit") || location.pathname.includes("/new");
+
   useEffect(() => {
-    fetchDevices();
-  }, []);
+    if (!isConfigView) {
+      fetchDevices();
+    }
+  }, [isConfigView]);
 
   const fetchDevices = async () => {
     try {
@@ -456,19 +392,15 @@ export default function Dashboard() {
         throw new Error("Failed to fetch devices");
       }
       const apiResponse = await response.json();
-      console.log("API Response:", apiResponse); // Debug log
 
-      // Extract the data array from the wrapped response
       const data = apiResponse.data || apiResponse;
 
-      // Handle empty array or array of devices
       if (Array.isArray(data)) {
-        // Map the actual API response to our component's expected format
         const formattedDevices = data.map((device) => ({
-          id: device.id || device.unique_id, // Handle different id field names
+          id: device.id || device.unique_id,
           name: device.short_name || device.name || "Unnamed Plant",
-          location: "Not Set", // Placeholder since API doesn't provide this yet
-          status: device.status || "offline", // Default to offline if no status
+          location: device.location || "Not Set",
+          status: device.status || "offline",
         }));
         setDevices(formattedDevices);
       } else {
@@ -479,13 +411,13 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Error fetching devices:", err);
       setError(err.message);
-      setDevices([]); // Set to empty array on error
+      setDevices([]);
       setLoading(false);
     }
   };
 
   const handleCardClick = (device) => {
-    console.log("Card clicked:", device);
+    navigate(`/devices/${device.id}`);
   };
 
   const handleHistoryClick = (device) => {
@@ -493,11 +425,11 @@ export default function Dashboard() {
   };
 
   const handleConfigClick = (device) => {
-    console.log("Configure:", device);
+    navigate("/dashboard/configurations");
   };
 
   const handleNavigateClick = (device) => {
-    console.log("Navigate to:", device);
+    navigate(`/devices/${device.id}`);
   };
 
   const handleRemoveClick = (device) => {
@@ -508,6 +440,24 @@ export default function Dashboard() {
   const handleAddDevice = () => {
     console.log("Add new device");
   };
+
+  const handleNewConfig = () => {
+    navigate("/dashboard/configurations/new");
+  };
+
+  const handleEditConfig = (config) => {
+    navigate(`/dashboard/configurations/edit/${config.id}`);
+  };
+
+  const handleBackToDashboard = () => {
+    navigate("/dashboard");
+  };
+
+  const healthyCount = devices.filter((d) => d.status === "healthy").length;
+  const warningCount = devices.filter((d) => d.status === "warning").length;
+
+  // Don't show stats in config editor mode
+  const showStats = !isConfigEditor;
 
   return (
     <div
@@ -523,244 +473,280 @@ export default function Dashboard() {
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header */}
           <div className="mb-6 sm:mb-8">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold ${
-                isDarkMode ? "text-gray-100" : "text-gray-800"
-              } mb-2`}
-            >
-              Plant Dashboard
-            </h1>
+            <div className="flex items-center gap-4 mb-2">
+              {isConfigView && (
+                <button
+                  onClick={handleBackToDashboard}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode
+                      ? "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+              )}
+              <h1
+                className={`text-2xl sm:text-3xl font-bold ${
+                  isDarkMode ? "text-gray-100" : "text-gray-800"
+                }`}
+              >
+                {isConfigView ? "Device Configurations" : "Plant Dashboard"}
+              </h1>
+            </div>
             <p
               className={`${
                 isDarkMode ? "text-gray-400" : "text-gray-600"
               } text-sm sm:text-base`}
             >
-              Monitor and manage all your plant devices in one place
+              {isConfigView
+                ? "Manage your device configuration templates"
+                : "Monitor and manage all your plant devices in one place"}
             </p>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div
-              className={`${
-                isDarkMode
-                  ? "bg-gray-800 border-emerald-800"
-                  : "bg-white border-emerald-100"
-              } rounded-xl shadow-md p-4 sm:p-6 border`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p
-                    className={`text-xs sm:text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-600"
-                    } mb-1`}
-                  >
-                    Total Plants
-                  </p>
-                  <p
-                    className={`text-xl sm:text-2xl font-bold ${
-                      isDarkMode ? "text-gray-100" : "text-gray-800"
-                    }`}
-                  >
-                    {devices.length}
-                  </p>
-                </div>
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 ${
-                    isDarkMode ? "bg-emerald-950" : "bg-emerald-100"
-                  } rounded-full flex items-center justify-center`}
-                >
-                  <TreePine
-                    className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                      isDarkMode ? "text-emerald-400" : "text-emerald-600"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`${
-                isDarkMode
-                  ? "bg-gray-800 border-green-800"
-                  : "bg-white border-green-100"
-              } rounded-xl shadow-md p-4 sm:p-6 border`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p
-                    className={`text-xs sm:text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-600"
-                    } mb-1`}
-                  >
-                    Healthy
-                  </p>
-                  <p
-                    className={`text-xl sm:text-2xl font-bold ${
-                      isDarkMode ? "text-gray-100" : "text-gray-800"
-                    }`}
-                  >
-                    {devices.filter((d) => d.status === "healthy").length}
-                  </p>
-                </div>
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 ${
-                    isDarkMode ? "bg-green-950" : "bg-green-100"
-                  } rounded-full flex items-center justify-center`}
-                >
-                  <CheckCircle
-                    className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                      isDarkMode ? "text-green-400" : "text-green-600"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`${
-                isDarkMode
-                  ? "bg-gray-800 border-amber-800"
-                  : "bg-white border-amber-100"
-              } rounded-xl shadow-md p-4 sm:p-6 border`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p
-                    className={`text-xs sm:text-sm ${
-                      isDarkMode ? "text-gray-400" : "text-gray-600"
-                    } mb-1`}
-                  >
-                    Need Attention
-                  </p>
-                  <p
-                    className={`text-xl sm:text-2xl font-bold ${
-                      isDarkMode ? "text-gray-100" : "text-gray-800"
-                    }`}
-                  >
-                    {devices.filter((d) => d.status === "warning").length}
-                  </p>
-                </div>
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 ${
-                    isDarkMode ? "bg-amber-950" : "bg-amber-100"
-                  } rounded-full flex items-center justify-center`}
-                >
-                  <AlertCircle
-                    className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                      isDarkMode ? "text-amber-400" : "text-amber-600"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Devices Grid */}
-          <div
-            className={`${
-              isDarkMode
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-100"
-            } rounded-2xl shadow-lg p-4 sm:p-6 border`}
-          >
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2
-                className={`text-lg sm:text-xl font-semibold ${
-                  isDarkMode ? "text-gray-100" : "text-gray-800"
-                }`}
-              >
-                Your Plants
-              </h2>
-              <button
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 ${
+          {/* Stats Cards - Hidden in config editor */}
+          {showStats && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <div
+                className={`${
                   isDarkMode
-                    ? "bg-emerald-700 hover:bg-emerald-600"
-                    : "bg-emerald-500 hover:bg-emerald-600"
-                } text-white rounded-lg transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base`}
+                    ? "bg-gray-800 border-emerald-800"
+                    : "bg-white border-emerald-100"
+                } rounded-xl shadow-md p-4 sm:p-6 border`}
               >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Add Plant</span>
-                <span className="sm:hidden">Add</span>
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2
-                  className={`w-8 h-8 ${
-                    isDarkMode ? "text-emerald-400" : "text-emerald-500"
-                  } animate-spin`}
-                />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className={`text-xs sm:text-sm ${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      } mb-1`}
+                    >
+                      {isConfigView ? "Total Configs" : "Total Plants"}
+                    </p>
+                    <p
+                      className={`text-xl sm:text-2xl font-bold ${
+                        isDarkMode ? "text-gray-100" : "text-gray-800"
+                      }`}
+                    >
+                      {isConfigView ? "..." : devices.length}
+                    </p>
+                  </div>
+                  <div
+                    className={`w-10 h-10 sm:w-12 sm:h-12 ${
+                      isDarkMode ? "bg-emerald-950" : "bg-emerald-100"
+                    } rounded-full flex items-center justify-center`}
+                  >
+                    <TreePine
+                      className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                        isDarkMode ? "text-emerald-400" : "text-emerald-600"
+                      }`}
+                    />
+                  </div>
+                </div>
               </div>
-            ) : error ? (
-              <div className="text-center py-20">
-                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <p
-                  className={`${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
+
+              <div
+                className={`${
+                  isDarkMode
+                    ? "bg-gray-800 border-green-800"
+                    : "bg-white border-green-100"
+                } rounded-xl shadow-md p-4 sm:p-6 border`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className={`text-xs sm:text-sm ${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      } mb-1`}
+                    >
+                      {isConfigView ? "Active Configs" : "Healthy"}
+                    </p>
+                    <p
+                      className={`text-xl sm:text-2xl font-bold ${
+                        isDarkMode ? "text-gray-100" : "text-gray-800"
+                      }`}
+                    >
+                      {isConfigView ? "..." : healthyCount}
+                    </p>
+                  </div>
+                  <div
+                    className={`w-10 h-10 sm:w-12 sm:h-12 ${
+                      isDarkMode ? "bg-green-950" : "bg-green-100"
+                    } rounded-full flex items-center justify-center`}
+                  >
+                    <CheckCircle
+                      className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                        isDarkMode ? "text-green-400" : "text-green-600"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`${
+                  isDarkMode
+                    ? "bg-gray-800 border-amber-800"
+                    : "bg-white border-amber-100"
+                } rounded-xl shadow-md p-4 sm:p-6 border`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p
+                      className={`text-xs sm:text-sm ${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      } mb-1`}
+                    >
+                      {isConfigView ? "Recently Used" : "Need Attention"}
+                    </p>
+                    <p
+                      className={`text-xl sm:text-2xl font-bold ${
+                        isDarkMode ? "text-gray-100" : "text-gray-800"
+                      }`}
+                    >
+                      {isConfigView ? "..." : warningCount}
+                    </p>
+                  </div>
+                  <div
+                    className={`w-10 h-10 sm:w-12 sm:h-12 ${
+                      isDarkMode ? "bg-amber-950" : "bg-amber-100"
+                    } rounded-full flex items-center justify-center`}
+                  >
+                    <AlertCircle
+                      className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                        isDarkMode ? "text-amber-400" : "text-amber-600"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content Area */}
+          {isConfigEditor ? (
+            /* Config Editor takes full content area */
+            <ConfigEditor isDarkMode={isDarkMode} />
+          ) : (
+            <div
+              className={`${
+                isDarkMode
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-white border-gray-100"
+              } rounded-2xl shadow-lg p-4 sm:p-6 border`}
+            >
+              {/* Content Header */}
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2
+                  className={`text-lg sm:text-xl font-semibold ${
+                    isDarkMode ? "text-gray-100" : "text-gray-800"
                   }`}
                 >
-                  Failed to load devices
-                </p>
-                <p
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-500" : "text-gray-400"
-                  } mt-2`}
-                >
-                  {error}
-                </p>
-              </div>
-            ) : devices.length === 0 ? (
-              <div className="text-center py-20">
-                <TreePine
-                  className={`w-12 h-12 ${
-                    isDarkMode ? "text-gray-600" : "text-gray-400"
-                  } mx-auto mb-4`}
-                />
-                <p
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-500" : "text-gray-400"
-                  } mb-6`}
-                >
-                  Add your first plant device to get started
-                </p>
+                  {isConfigView ? "Configuration Templates" : "Your Plants"}
+                </h2>
                 <button
-                  onClick={handleAddDevice}
-                  className={`px-4 py-2 ${
+                  onClick={isConfigView ? handleNewConfig : handleAddDevice}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 ${
                     isDarkMode
                       ? "bg-emerald-700 hover:bg-emerald-600"
                       : "bg-emerald-500 hover:bg-emerald-600"
-                  } text-white rounded-lg transition-colors inline-flex items-center gap-2`}
+                  } text-white rounded-lg transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base`}
                 >
-                  <Plus className="w-4 h-4" />
-                  Add Your First Plant
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">
+                    {isConfigView ? "New Configuration" : "Add Plant"}
+                  </span>
+                  <span className="sm:hidden">
+                    {isConfigView ? "New" : "Add"}
+                  </span>
                 </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 md:gap-5">
-                {devices.map((device) => (
-                  <PlantDeviceCard
-                    key={device.id}
-                    plantName={device.name}
-                    location={device.location}
-                    status={device.status}
-                    isDarkMode={isDarkMode}
-                    onCardClick={() => handleCardClick(device)}
-                    onHistoryClick={() => handleHistoryClick(device)}
-                    onConfigClick={() => handleConfigClick(device)}
-                    onNavigateClick={() => handleNavigateClick(device)}
-                    onRemoveClick={() => handleRemoveClick(device)}
-                  />
-                ))}
-                <PlantDeviceCard
-                  isAddCard={true}
+
+              {/* Content */}
+              {isConfigView ? (
+                <ConfigurationsList
                   isDarkMode={isDarkMode}
-                  onAddDevice={handleAddDevice}
+                  onEditConfig={handleEditConfig}
+                  onNewConfig={handleNewConfig}
                 />
-              </div>
-            )}
-          </div>
+              ) : loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2
+                    className={`w-8 h-8 ${
+                      isDarkMode ? "text-emerald-400" : "text-emerald-500"
+                    } animate-spin`}
+                  />
+                </div>
+              ) : error ? (
+                <div className="text-center py-20">
+                  <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                  <p
+                    className={`${
+                      isDarkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Failed to load devices
+                  </p>
+                  <p
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-500" : "text-gray-400"
+                    } mt-2`}
+                  >
+                    {error}
+                  </p>
+                </div>
+              ) : devices.length === 0 ? (
+                <div className="text-center py-20">
+                  <TreePine
+                    className={`w-12 h-12 ${
+                      isDarkMode ? "text-gray-600" : "text-gray-400"
+                    } mx-auto mb-4`}
+                  />
+                  <p
+                    className={`text-sm ${
+                      isDarkMode ? "text-gray-500" : "text-gray-400"
+                    } mb-6`}
+                  >
+                    Add your first plant device to get started
+                  </p>
+                  <button
+                    onClick={handleAddDevice}
+                    className={`px-4 py-2 ${
+                      isDarkMode
+                        ? "bg-emerald-700 hover:bg-emerald-600"
+                        : "bg-emerald-500 hover:bg-emerald-600"
+                    } text-white rounded-lg transition-colors inline-flex items-center gap-2`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Your First Plant
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  {devices.map((device) => (
+                    <PlantDeviceCard
+                      key={device.id}
+                      plantName={device.name}
+                      location={device.location}
+                      status={device.status}
+                      isDarkMode={isDarkMode}
+                      onCardClick={() => handleCardClick(device)}
+                      onHistoryClick={() => handleHistoryClick(device)}
+                      onConfigClick={() => handleConfigClick(device)}
+                      onNavigateClick={() => handleNavigateClick(device)}
+                      onRemoveClick={() => handleRemoveClick(device)}
+                    />
+                  ))}
+                  <PlantDeviceCard
+                    isAddCard={true}
+                    isDarkMode={isDarkMode}
+                    onAddDevice={handleAddDevice}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

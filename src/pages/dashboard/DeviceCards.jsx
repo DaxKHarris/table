@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 
 const PlantDeviceCard = ({
-  plantName = "Monstera Deliciosa",
-  location = "Living Room",
-  status = "healthy",
+  plantName,
+  location,
+  status,
   onCardClick,
   onHistoryClick,
   onConfigClick,
@@ -28,7 +28,7 @@ const PlantDeviceCard = ({
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
 
-  // Add Device Card (early return before statusConfig is needed)
+  // Add Device Card (early return)
   if (isAddCard) {
     return (
       <div
@@ -76,7 +76,7 @@ const PlantDeviceCard = ({
     );
   }
 
-  // Status configurations (only needed for plant cards)
+  // Status configurations
   const statusConfigs = {
     healthy: {
       icon: <CheckCircle className="w-4 h-4" />,
@@ -133,14 +133,42 @@ const PlantDeviceCard = ({
     }
   };
 
-  // Plant Device Card with extended hover area
+  const handleMouseEnter = () => {
+    setIsMenuVisible(true);
+  };
+
+  const handleMouseLeave = (e) => {
+    // Only hide if mouse is not moving to the menu area
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuArea = {
+      left: rect.right,
+      right: rect.right + 200, // Generous menu area
+      top: rect.top,
+      bottom: rect.bottom,
+    };
+
+    setTimeout(() => {
+      // Check if mouse is still in the extended area
+      if (
+        e.clientX < menuArea.left ||
+        e.clientX > menuArea.right ||
+        e.clientY < menuArea.top ||
+        e.clientY > menuArea.bottom
+      ) {
+        setIsMenuVisible(false);
+        setHoveredIcon(null);
+      }
+    }, 100);
+  };
+
+  // Plant Device Card
   return (
-    <div className="relative w-48" style={{ zIndex: isMenuVisible ? 50 : 1 }}>
-      {/* Extended hover area that includes card + menu space */}
+    <div className="relative" style={{ zIndex: isMenuVisible ? 1000 : 1 }}>
+      {/* Extended hover detection area */}
       <div
         className="relative"
-        onMouseEnter={() => setIsMenuVisible(true)}
-        onMouseLeave={() => setIsMenuVisible(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {/* The actual card */}
         <div
@@ -228,22 +256,10 @@ const PlantDeviceCard = ({
                   strokeWidth="1"
                   fill="none"
                 />
-                <path
-                  d="M25 35 Q20 32 18 28"
-                  stroke={isDarkMode ? "#22c55e" : "#689f38"}
-                  strokeWidth="0.5"
-                  fill="none"
-                />
-                <path
-                  d="M25 35 Q30 32 32 28"
-                  stroke={isDarkMode ? "#22c55e" : "#689f38"}
-                  strokeWidth="0.5"
-                  fill="none"
-                />
               </g>
             </svg>
 
-            {/* Water droplet indicator */}
+            {/* Indicators */}
             <div
               className={`absolute top-2 right-2 ${
                 isDarkMode ? "bg-gray-800" : "bg-white"
@@ -251,7 +267,6 @@ const PlantDeviceCard = ({
             >
               <Droplet className="w-4 h-4 text-blue-400 fill-blue-400" />
             </div>
-            {/* Sun indicator */}
             <div
               className={`absolute top-2 left-2 ${
                 isDarkMode ? "bg-gray-800" : "bg-white"
@@ -271,7 +286,7 @@ const PlantDeviceCard = ({
               <span>{statusConfig.label}</span>
             </div>
 
-            {/* Plant Name */}
+            {/* Plant Info */}
             <h3
               className={`font-semibold ${
                 isDarkMode ? "text-gray-100" : "text-gray-800"
@@ -289,69 +304,72 @@ const PlantDeviceCard = ({
           </div>
         </div>
 
-        {/* Invisible hover extension area */}
-        <div className="absolute left-full top-0 w-20 h-full" />
-
-        {/* Navigation Menu */}
-        <div
-          className={`nav-menu absolute left-full top-1/2 -translate-y-1/2 ml-2 transition-all duration-300 ${
-            isMenuVisible
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 -translate-x-2 pointer-events-none"
-          }`}
-        >
+        {/* Navigation Menu - Positioned relative to card */}
+        {isMenuVisible && (
           <div
-            className={`${
-              isDarkMode ? "bg-gray-800" : "bg-white"
-            } rounded-lg shadow-xl p-1 flex flex-col gap-1`}
+            className="nav-menu absolute left-full top-1/2 -translate-y-1/2 ml-2"
+            style={{ zIndex: 9999 }}
+            onMouseEnter={() => setIsMenuVisible(true)}
+            onMouseLeave={() => {
+              setIsMenuVisible(false);
+              setHoveredIcon(null);
+            }}
           >
-            {navItems.map((item, index) => (
-              <div
-                key={index}
-                className="relative"
-                onMouseEnter={() => setHoveredIcon(index)}
-                onMouseLeave={() => setHoveredIcon(null)}
-              >
-                <button
-                  className={`p-2.5 rounded-lg transition-all duration-200 ${
-                    item.danger
-                      ? isDarkMode
-                        ? "hover:bg-red-950/50 hover:text-red-400 text-gray-400"
-                        : "hover:bg-red-50 hover:text-red-500 text-gray-600"
-                      : isDarkMode
-                      ? "hover:bg-gray-700 hover:text-gray-200 text-gray-400"
-                      : "hover:bg-gray-100 hover:text-gray-700 text-gray-600"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (item.action) item.action();
-                  }}
-                >
-                  {item.icon}
-                </button>
-
-                {/* Tooltip */}
+            <div
+              className={`${
+                isDarkMode ? "bg-gray-800" : "bg-white"
+              } rounded-lg shadow-2xl border ${
+                isDarkMode ? "border-gray-700" : "border-gray-200"
+              } p-1 flex flex-col gap-1`}
+            >
+              {navItems.map((item, index) => (
                 <div
-                  className={`absolute left-full ml-2 top-1/2 -translate-y-1/2 transition-all duration-200 z-[60] ${
-                    hoveredIcon === index
-                      ? "opacity-100 translate-x-0"
-                      : "opacity-0 -translate-x-2 pointer-events-none"
-                  }`}
+                  key={index}
+                  className="relative"
+                  onMouseEnter={() => setHoveredIcon(index)}
+                  onMouseLeave={() => setHoveredIcon(null)}
                 >
-                  <div
-                    className={`${
-                      isDarkMode
-                        ? "bg-gray-700 text-gray-100"
-                        : "bg-gray-800 text-white"
-                    } text-xs px-2 py-1 rounded whitespace-nowrap`}
+                  <button
+                    className={`p-2.5 rounded-lg transition-all duration-200 ${
+                      item.danger
+                        ? isDarkMode
+                          ? "hover:bg-red-950/50 hover:text-red-400 text-gray-400"
+                          : "hover:bg-red-50 hover:text-red-500 text-gray-600"
+                        : isDarkMode
+                        ? "hover:bg-gray-700 hover:text-gray-200 text-gray-400"
+                        : "hover:bg-gray-100 hover:text-gray-700 text-gray-600"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (item.action) item.action();
+                      setIsMenuVisible(false);
+                    }}
                   >
-                    {item.label}
-                  </div>
+                    {item.icon}
+                  </button>
+
+                  {/* Tooltip */}
+                  {hoveredIcon === index && (
+                    <div
+                      className="absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap"
+                      style={{ zIndex: 10000 }}
+                    >
+                      <div
+                        className={`${
+                          isDarkMode
+                            ? "bg-gray-700 text-gray-100"
+                            : "bg-gray-800 text-white"
+                        } text-xs px-2 py-1 rounded`}
+                      >
+                        {item.label}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
