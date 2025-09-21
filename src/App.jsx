@@ -8,6 +8,8 @@ import Login from "./pages/Login";
 import DevicePage from "./pages/DevicePage";
 import CreateAccount from "./pages/CreateAccount";
 import ForgotPassword from "./pages/ForgotPassword";
+import SensorData from "./pages/device/SensorData";
+import DeviceTimelineConfig from "./pages/DeviceTimelineConfig";
 
 // Protected Route wrapper component
 function ProtectedRoute({ children }) {
@@ -52,6 +54,7 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(false);
   return (
     <BrowserRouter>
       <Routes>
@@ -59,13 +62,15 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<CreateAccount />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
         {/* Protected Routes */}
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <MainBoard />
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -73,7 +78,21 @@ export default function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <MainBoard />
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/archives"
+          element={
+            <ProtectedRoute>
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -81,7 +100,10 @@ export default function App() {
           path="/dashboard/configurations"
           element={
             <ProtectedRoute>
-              <MainBoard />
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -89,7 +111,10 @@ export default function App() {
           path="/dashboard/configurations/new"
           element={
             <ProtectedRoute>
-              <MainBoard />
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -97,7 +122,21 @@ export default function App() {
           path="/dashboard/configurations/edit/:configId"
           element={
             <ProtectedRoute>
-              <MainBoard />
+              <MainBoard
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/devices/:deviceId"
+          element={
+            <ProtectedRoute>
+              <SensorData
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -105,7 +144,10 @@ export default function App() {
           path="/devices/:deviceId"
           element={
             <ProtectedRoute>
-              <DevicePage />
+              <DevicePage
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
@@ -113,11 +155,13 @@ export default function App() {
           path="/devices/:deviceId/config"
           element={
             <ProtectedRoute>
-              <div>Device Config Page (To be implemented)</div>
+              <DeviceTimelineConfig
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+              />
             </ProtectedRoute>
           }
         />
-
         {/* Fallback - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

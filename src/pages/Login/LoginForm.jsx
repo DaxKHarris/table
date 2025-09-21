@@ -2,8 +2,10 @@ import { useRef, useState, useEffect } from "react";
 import getUserAuth from "../../services/authService";
 import login from "../../assets/login.png";
 import { Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginForm({ onSuccess }) {
+  const navigate = useNavigate();
   const userRef = useRef();
   const passRef = useRef();
   const [error, setError] = useState("");
@@ -240,6 +242,7 @@ export default function LoginForm({ onSuccess }) {
             >
               <button
                 type="button"
+                onClick={() => navigate("/forgot-password")}
                 style={{
                   background: "none",
                   border: "none",
@@ -313,6 +316,7 @@ export default function LoginForm({ onSuccess }) {
               Don't have an account yet?{" "}
               <button
                 type="button"
+                onClick={() => navigate("/signup")} // Add this onClick
                 style={{
                   background: "none",
                   border: "none",

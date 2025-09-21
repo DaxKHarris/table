@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./dashboard/Sidebar";
-import ConfigurationsList from "./dashboard/ConfigurationsList"; // updated import path
-import ConfigEditor from "./dashboard/ConfigEditor"; // integrate the editor
+import ConfigurationsList from "./dashboard/ConfigurationsList";
+import ConfigEditor from "./dashboard/ConfigEditor";
 import PlantDeviceCard from "./dashboard/DeviceCards";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { fetchDevicesWithStatus } from "../services/apiService";
+import SessionArchives from "./dashboard/SessionArchives";
 import {
   TreePine,
   AlertCircle,
@@ -12,11 +14,10 @@ import {
   Loader2,
 } from "lucide-react";
 
-export default function Dashboard() {
+export default function Dashboard({ isDarkMode, setIsDarkMode }) {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ export default function Dashboard() {
       setCurrentView("config-edit");
     } else if (path.includes("/configurations")) {
       setCurrentView("configurations");
+    } else if (path.includes("/archives")) {
+      setCurrentView("archives");
     } else {
       setCurrentView("dashboard");
     }
@@ -44,28 +47,16 @@ export default function Dashboard() {
 
   const fetchDevices = async () => {
     try {
-      // API Call for [devices] here
-      const response = await fetch("/api/user/devices", {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch devices");
-      }
-      const apiResponse = await response.json();
-      const data = apiResponse.data || apiResponse;
+      const devicesWithStatus = await fetchDevicesWithStatus();
 
-      if (Array.isArray(data)) {
-        const formattedDevices = data.map((device) => ({
-          id: device.id || device.unique_id,
-          name: device.short_name || device.name || "Unnamed Plant",
-          location: device.location || "Not Set",
-          status: device.status || "offline",
-        }));
-        setDevices(formattedDevices);
-      } else {
-        setDevices([]);
-      }
+      const formattedDevices = devicesWithStatus.map((device) => ({
+        id: device.id,
+        name: device.short_name || "Unnamed Plant",
+        location: device.model || "Not Set",
+        status: device.status?.toLowerCase() || "offline",
+      }));
+
+      setDevices(formattedDevices);
       setLoading(false);
     } catch (err) {
       console.error("Error fetching devices:", err);
@@ -76,7 +67,7 @@ export default function Dashboard() {
   };
 
   const handleCardClick = (device) => {
-    console.log("Card clicked:", device);
+    navigate(`/dashboard/devices/${device.id}`);
   };
 
   const handleHistoryClick = (device) => {
@@ -84,7 +75,7 @@ export default function Dashboard() {
   };
 
   const handleConfigClick = (device) => {
-    console.log("Configure:", device);
+    navigate(`/devices/${device.id}/config`);
   };
 
   const handleNavigateClick = (device) => {
@@ -133,6 +124,8 @@ export default function Dashboard() {
               >
                 {currentView === "configurations"
                   ? "Configuration Templates"
+                  : currentView === "archives"
+                  ? "Session Archives"
                   : "Plant Dashboard"}
               </h1>
               <p
@@ -156,6 +149,8 @@ export default function Dashboard() {
           ) : currentView === "configurations" ? (
             // Configuration list view
             <ConfigurationsList isDarkMode={isDarkMode} />
+          ) : currentView === "archives" ? (
+            <SessionArchives isDarkMode={isDarkMode} />
           ) : (
             // Devices Grid
             <div
@@ -228,30 +223,27 @@ export default function Dashboard() {
                   </button>
                 </div>
               ) : (
-                // Fixed, consistent card spacing
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 sm:gap-6 md:gap-8 auto-rows-fr">
+                // Fixed spacing grid with consistent card sizes
+                <div className="grid grid-cols-[repeat(auto-fit,_minmax(200px,_200px))] gap-6 justify-center sm:justify-start">
                   {devices.map((device) => (
-                    <div key={device.id} className="h-full">
-                      <PlantDeviceCard
-                        plantName={device.name}
-                        location={device.location}
-                        status={device.status}
-                        isDarkMode={isDarkMode}
-                        onCardClick={() => handleCardClick(device)}
-                        onHistoryClick={() => handleHistoryClick(device)}
-                        onConfigClick={() => handleConfigClick(device)}
-                        onNavigateClick={() => handleNavigateClick(device)}
-                        onRemoveClick={() => handleRemoveClick(device)}
-                      />
-                    </div>
-                  ))}
-                  <div className="h-full">
                     <PlantDeviceCard
-                      isAddCard={true}
+                      key={device.id}
+                      plantName={device.name}
+                      location={device.location}
+                      status={device.status}
                       isDarkMode={isDarkMode}
-                      onAddDevice={handleAddDevice}
+                      onCardClick={() => handleCardClick(device)}
+                      onHistoryClick={() => handleHistoryClick(device)}
+                      onConfigClick={() => handleConfigClick(device)}
+                      onNavigateClick={() => handleNavigateClick(device)}
+                      onRemoveClick={() => handleRemoveClick(device)}
                     />
-                  </div>
+                  ))}
+                  <PlantDeviceCard
+                    isAddCard={true}
+                    isDarkMode={isDarkMode}
+                    onAddDevice={handleAddDevice}
+                  />
                 </div>
               )}
             </div>

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { markSessionComplete } from "../../services/apiService";
 import {
   Settings,
   History,
@@ -25,8 +27,23 @@ const PlantDeviceCard = ({
   isAddCard = false,
   isDarkMode = false,
 }) => {
+  const [showSessionEndDialog, setShowSessionEndDialog] = useState(false);
+  const navigate = useNavigate();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const handleMarkSessionDone = async () => {
+    try {
+      const result = await markSessionComplete(deviceId); // You'll need to pass deviceId as a prop
+      if (result.success) {
+        // Notify parent component to refresh device list
+        if (onSessionComplete) onSessionComplete();
+        setShowSessionEndDialog(false);
+      }
+    } catch (error) {
+      console.error("Failed to complete session:", error);
+      alert("Failed to complete session. Please try again.");
+    }
+  };
 
   // Add Device Card (early return)
   if (isAddCard) {
@@ -115,9 +132,9 @@ const PlantDeviceCard = ({
       action: onConfigClick,
     },
     {
-      icon: <Navigation className="w-5 h-5" />,
-      label: "Go to Plant",
-      action: onNavigateClick,
+      icon: <CheckCircle className="w-5 h-5" />,
+      label: "Mark Session Done",
+      action: () => setShowSessionEndDialog(true),
     },
     {
       icon: <Trash2 className="w-5 h-5" />,
@@ -294,16 +311,8 @@ const PlantDeviceCard = ({
             >
               {plantName}
             </h3>
-            <p
-              className={`text-xs ${
-                isDarkMode ? "text-gray-400" : "text-gray-500"
-              } mt-0.5`}
-            >
-              {location}
-            </p>
           </div>
         </div>
-
         {/* Navigation Menu - Positioned relative to card */}
         {isMenuVisible && (
           <div
@@ -367,6 +376,84 @@ const PlantDeviceCard = ({
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        {showSessionEndDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] p-4">
+            <div
+              className={`${
+                isDarkMode
+                  ? "bg-gray-800 text-gray-100"
+                  : "bg-white text-gray-800"
+              } rounded-2xl max-w-md w-full p-6 shadow-2xl`}
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-bold mb-2">
+                  End Current Grow Session?
+                </h2>
+                <p
+                  className={`text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  This will archive your current plant data and clear all
+                  configurations.
+                </p>
+              </div>
+
+              <div
+                className={`${
+                  isDarkMode ? "bg-blue-950/30" : "bg-blue-50"
+                } border border-blue-500 rounded-lg p-4 mb-4`}
+              >
+                <h3 className="font-semibold text-blue-600 mb-2">
+                  After confirming:
+                </h3>
+                <ol className="space-y-1 text-sm list-decimal list-inside">
+                  <li>Current grow data will be saved to archives</li>
+                  <li>All configurations will be cleared</li>
+                  <li>
+                    You'll need to reset your grow box before starting a new
+                    session
+                  </li>
+                </ol>
+              </div>
+
+              <div
+                className={`${
+                  isDarkMode ? "bg-yellow-950/30" : "bg-yellow-50"
+                } border border-yellow-500 rounded-lg p-3 mb-4`}
+              >
+                <p className="text-sm">
+                  <strong className="text-yellow-600">Reminder:</strong> Please
+                  handle any nutrient solutions safely when resetting your box.
+                  Refer to your owner's manual if needed.
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowSessionEndDialog(false)}
+                  className={`px-4 py-2 rounded-lg ${
+                    isDarkMode
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-gray-200 hover:bg-gray-300"
+                  } transition-colors`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleMarkSessionDone}
+                  className={`px-4 py-2 ${
+                    isDarkMode
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-green-600 hover:bg-green-700"
+                  } text-white rounded-lg transition-colors`}
+                >
+                  End Session
+                </button>
+              </div>
             </div>
           </div>
         )}

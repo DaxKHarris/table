@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus,
-  Edit2,
-  Trash2,
-  Copy,
-  Settings,
-  Leaf,
-  Droplets,
-  Zap,
-  Activity,
-} from "lucide-react";
+  fetchConfigurations,
+  deleteConfiguration,
+} from "../../services/apiService";
+import { ConfigCard } from "../DeviceTimelineConfig";
+import { Plus, Settings, Leaf } from "lucide-react";
 
 const ConfigurationsList = ({ isDarkMode }) => {
   const [configurations, setConfigurations] = useState([]);
@@ -18,16 +13,13 @@ const ConfigurationsList = ({ isDarkMode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchConfigurations();
+    loadConfigurations();
   }, []);
 
-  const fetchConfigurations = async () => {
+  const loadConfigurations = async () => {
     try {
-      // API Call for [configurations] here
-      // Example:
-      // const res = await fetch("/api/configurations", { credentials: "include" });
-      // const data = await res.json();
-      // setConfigurations(Array.isArray(data) ? data : []);
+      const configs = await fetchConfigurations();
+      setConfigurations(configs);
     } catch (error) {
       console.error("Failed to fetch configurations:", error);
     } finally {
@@ -41,19 +33,34 @@ const ConfigurationsList = ({ isDarkMode }) => {
 
   const handleDelete = async (configId) => {
     if (window.confirm("Are you sure you want to delete this configuration?")) {
-      // API Call for [delete configuration] here
-      setConfigurations((prev) => prev.filter((c) => c.id !== configId));
+      try {
+        await deleteConfiguration(configId);
+        setConfigurations((prev) => prev.filter((c) => c.id !== configId));
+      } catch (error) {
+        console.error("Failed to delete configuration:", error);
+      }
     }
   };
 
-  const handleDuplicate = (config) => {
-    // API Call for [duplicate configuration] here
-    // For now, optimistic UI can be implemented after API exists
-    console.log("Duplicate configuration:", config);
+  const handleDuplicate = async (config) => {
+    try {
+      const duplicated = await duplicateConfiguration(config.id);
+      setConfigurations((prev) => [...prev, duplicated]);
+    } catch (error) {
+      console.error("Failed to duplicate configuration:", error);
+    }
   };
 
   const handleCreateNew = () => {
     navigate("/dashboard/configurations/new");
+  };
+
+  const handleEditConfig = (configId) => {
+    navigate(`/dashboard/configurations/edit/${configId}`);
+  };
+
+  const handlePhaseClick = (configId, phaseIndex, phase) => {
+    navigate(`/dashboard/configurations/edit/${configId}?phase=${phaseIndex}`);
   };
 
   // Loading state
@@ -186,137 +193,19 @@ const ConfigurationsList = ({ isDarkMode }) => {
           <span className="sm:hidden">New</span>
         </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex flex-wrap gap-6">
         {configurations.map((config) => (
-          <div
+          <ConfigCard
             key={config.id}
-            className={`${
-              isDarkMode
-                ? "bg-gray-700/50 border-gray-600 hover:border-emerald-700"
-                : "bg-gray-50 border-gray-200 hover:border-emerald-400"
-            } border rounded-xl p-4 transition-all duration-200 hover:shadow-md`}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3
-                  className={`font-semibold ${
-                    isDarkMode ? "text-gray-100" : "text-gray-800"
-                  } mb-1`}
-                >
-                  {config.name}
-                </h3>
-                <p
-                  className={`text-xs ${
-                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  {config.devices} device{config.devices !== 1 ? "s" : ""} using
-                  this
-                </p>
-              </div>
-              <div
-                className={`w-10 h-10 ${
-                  isDarkMode ? "bg-emerald-950/50" : "bg-emerald-100"
-                } rounded-lg flex items-center justify-center`}
-              >
-                <Leaf
-                  className={`w-5 h-5 ${
-                    isDarkMode ? "text-emerald-400" : "text-emerald-600"
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2">
-                <Droplets
-                  className={`w-4 h-4 ${
-                    isDarkMode ? "text-blue-400" : "text-blue-500"
-                  }`}
-                />
-                <span
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Humidity: {config.humidity}%
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap
-                  className={`w-4 h-4 ${
-                    isDarkMode ? "text-yellow-400" : "text-yellow-500"
-                  }`}
-                />
-                <span
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  pH: {config.ph}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Activity
-                  className={`w-4 h-4 ${
-                    isDarkMode ? "text-purple-400" : "text-purple-500"
-                  }`}
-                />
-                <span
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  EC: {config.ec} μS/cm
-                </span>
-              </div>
-            </div>
-
-            <div
-              className={`text-xs ${
-                isDarkMode ? "text-gray-500" : "text-gray-400"
-              } mb-3`}
-            >
-              Modified: {config.lastModified}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(config.id)}
-                className={`flex-1 p-2 ${
-                  isDarkMode
-                    ? "bg-gray-600 hover:bg-gray-500 text-gray-200"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                } rounded-lg transition-colors flex items-center justify-center gap-1.5 text-sm`}
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                Edit
-              </button>
-              <button
-                onClick={() => handleDuplicate(config)}
-                className={`p-2 ${
-                  isDarkMode
-                    ? "bg-gray-600 hover:bg-gray-500 text-gray-200"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                } rounded-lg transition-colors`}
-                title="Duplicate"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleDelete(config.id)}
-                className={`p-2 ${
-                  isDarkMode
-                    ? "bg-red-900/50 hover:bg-red-800/50 text-red-400"
-                    : "bg-red-50 hover:bg-red-100 text-red-500"
-                } rounded-lg transition-colors`}
-                title="Delete"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+            config={config}
+            onEditConfig={handleEditConfig}
+            onPhaseClick={handlePhaseClick}
+            onDeleteConfig={handleDelete}
+            theme={{
+              textPrimary: isDarkMode ? "text-gray-100" : "text-gray-800",
+            }}
+            isDarkMode={isDarkMode}
+          />
         ))}
       </div>
     </div>

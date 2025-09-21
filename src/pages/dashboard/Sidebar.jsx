@@ -1,3 +1,5 @@
+import logo from "../../assets/ayt_text.png";
+import iconOnly from "../../assets/ayt_icon.png";
 import {
   Home,
   Settings2,
@@ -9,6 +11,7 @@ import {
   Sun,
 } from "lucide-react";
 const Sidebar = ({ isDarkMode, setIsDarkMode, currentView, onNavigate }) => {
+  // In Sidebar.jsx, update the navItems array:
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     {
@@ -16,9 +19,7 @@ const Sidebar = ({ isDarkMode, setIsDarkMode, currentView, onNavigate }) => {
       label: "Configurations",
       path: "/dashboard/configurations",
     },
-    { icon: Search, label: "Search" },
-    { icon: History, label: "History" },
-    { icon: EllipsisVertical, label: "More" },
+    { icon: History, label: "Archives", path: "/dashboard/archives" }, // Changed from History
   ];
 
   const profile = {
@@ -34,20 +35,23 @@ const Sidebar = ({ isDarkMode, setIsDarkMode, currentView, onNavigate }) => {
           : "bg-emerald-900 border-emerald-800"
       } border-r transition-all duration-300 ease-in-out flex flex-col z-50 shadow-lg`}
     >
-      <div
-        className={`p-4 ${
-          isDarkMode ? "border-emerald-900" : "border-emerald-800"
-        } border-b overflow-hidden`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 flex-shrink-0 relative">
-            <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
-          </div>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap text-lg font-bold text-white">
-            PlantCare Pro
-          </span>
+      <div className="flex items-start h-20 relative pt-3">
+        {/* Icon - centered in collapsed state, larger size */}
+        <div className="w-16 flex justify-center">
+          <img
+            src={iconOnly}
+            alt="Logo"
+            className="w-8 h-12 flex-shrink-0 object-contain"
+          />
+        </div>
+
+        {/* Text part - top-aligned with icon, larger size */}
+        <div className="flex-1">
+          <img
+            src={logo}
+            alt="Logo"
+            className="h-16 object-contain object-left"
+          />
         </div>
       </div>
 

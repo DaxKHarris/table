@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
+import {
+  saveConfiguration,
+  fetchConfigurationById,
+} from "../../services/apiService";
 import { useParams, useNavigate } from "react-router-dom";
 import { Save, Sun, Moon, ArrowLeft, Plus, Edit3 } from "lucide-react";
 
@@ -230,94 +234,136 @@ const ConfigEditor = ({ isDarkMode = false }) => {
   const [activePhaseIdx, setActivePhaseIdx] = useState(0);
   const [activeTab, setActiveTab] = useState("environment");
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false); // Add this
 
-  /*
-  {
-  "name": "Conf name",
-  "sections": [
-    {
-      "data": {
-        "aerator": {
-          "value": 0.1
-        },
-        "blue_light": [
-          {
-            "from": 0,
-            "to": 8AM,
-            "value": 0
-          },
-          {
-            "from": 8AM,
-            "to": 6pm,
-            "value": 100000000000000
-          },
-          {
-            "from": 6 pm,
-            "to": 12,
-            "value": 0
-          }
-        ],
-        "ec": {
-          "aggressiveness": 0,
-          "high": 0.1,
-          "low": 0.1
-        },
-        "far_red_light": [
-          {
-            "from": 0,
-            "to": 0,
-            "value": 0.1
-          }
-        ],
-        "humidity": {
-          "aggressiveness": 0,
-          "high": 0.1,
-          "low": 0.1
-        },
-        "ph": {
-          "aggressiveness": 0,
-          "high": 0.1,
-          "low": 0.1
-        },
-        "red_light": [
-          {
-            "from": 0,
-            "to": 0,
-            "value": 0.1
-          }
-        ],
-        "uv_light": [
-          {
-            "from": 0,
-            "to": 0,
-            "value": 0.1
-          }
-        ],
-        "white_light": [
-          {
-            "from": 0,
-            "to": 0,
-            "value": 0.1
-          }
-        ]
-      },
-      "max_time": 0,
-      "name": "string"
-    }
-  ]
-}
-  */
+  useEffect(() => {
+    const loadExistingConfig = async () => {
+      if (configId && !isNewConfig) {
+        try {
+          setLoading(true);
+          const existingConfig = await fetchConfigurationById(configId);
+
+          // Transform API data back to UI format
+          const transformedPhases =
+            existingConfig.sections?.map((section, index) => ({
+              id: section.id || Date.now() + index,
+              sectionId: section.id, // Store the original section ID for updates
+              label: section.name,
+              sequence: section.sequence || index, // Store original sequence
+              gapToNext: {
+                days: Math.floor(section.max_time / 86400),
+                hours: Math.floor((section.max_time % 86400) / 3600),
+                minutes: Math.floor((section.max_time % 3600) / 60),
+              },
+              config: {
+                name: existingConfig.name,
+                // Transform section.data back to your UI format with rounding
+                humidityMin:
+                  Math.round((section.data.humidity?.low || 55) * 10) / 10,
+                humidityMax:
+                  Math.round((section.data.humidity?.high || 70) * 10) / 10,
+                phMin: Math.round((section.data.ph?.low || 5.8) * 10) / 10,
+                phMax: Math.round((section.data.ph?.high || 6.6) * 10) / 10,
+                ec: Math.round(section.data.ec?.high || 1200),
+                aerator: Math.round(section.data.aerator?.value || 50),
+                lighting: {
+                  dayDuration: 16, // Default - you might want to calculate this from light arrays
+                  nightDuration: 8,
+                  startMinutes: 480, // Default 8:00 AM
+                  dayChannels: {
+                    red: Math.round(
+                      (section.data.red_light?.[0]?.value || 0) * 100
+                    ),
+                    blue: Math.round(
+                      (section.data.blue_light?.[0]?.value || 0) * 100
+                    ),
+                    white: Math.round(
+                      (section.data.white_light?.[0]?.value || 0) * 100
+                    ),
+                    farRed: Math.round(
+                      (section.data.far_red_light?.[0]?.value || 0) * 100
+                    ),
+                    uv: Math.round(
+                      (section.data.uv_light?.[0]?.value || 0) * 100
+                    ),
+                  },
+                  nightChannels: {
+                    red: 0,
+                    blue: 0,
+                    white: 0,
+                    farRed: 5,
+                    uv: 0,
+                  },
+                },
+              },
+            })) || [];
+
+          setPhases(
+            transformedPhases.length > 0
+              ? transformedPhases
+              : [
+                  {
+                    id: 1,
+                    label: "Phase 1",
+                    config: makeDefaultConfig(),
+                    gapToNext: { days: 0, hours: 0, minutes: 0 },
+                  },
+                ]
+          );
+
+          // Set the active phase to the first one
+          setActivePhaseIdx(0);
+        } catch (error) {
+          console.error("Error loading configuration:", error);
+          // Keep default phases on error
+          setPhases([
+            {
+              id: 1,
+              label: "Phase 1",
+              config: makeDefaultConfig(),
+              gapToNext: { days: 0, hours: 0, minutes: 0 },
+            },
+          ]);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadExistingConfig();
+  }, [configId, isNewConfig]);
+
+  const setGapForActive = (field, value) => {
+    setPhases((prev) => {
+      const next = [...prev];
+      const current = { ...next[activePhaseIdx] };
+
+      // Ensure gapToNext exists
+      if (!current.gapToNext) {
+        current.gapToNext = { days: 0, hours: 0, minutes: 0 };
+      }
+
+      // Handle empty string properly
+      const numericValue = value === "" ? 0 : parseInt(value);
+      const finalValue = isNaN(numericValue) ? 0 : numericValue;
+
+      current.gapToNext = {
+        ...current.gapToNext,
+        [field]: finalValue,
+      };
+      next[activePhaseIdx] = current;
+      return next;
+    });
+  };
 
   const handleSave = async () => {
+    console.log("Actual phases data:", phases);
+    console.log("Active phase config:", phases[activePhaseIdx]?.config);
+    // ... rest of save logic
     setIsSaving(true);
     try {
       const payload = { phases };
-      const url = isNewConfig
-        ? "/api/configurations"
-        : `/api/configurations/${configId}`;
-      const method = isNewConfig ? "POST" : "PUT";
-      // API Call for [create/update configuration with phases] here
-      console.log("SAVE payload (stub):", payload, method, url);
+      await saveConfiguration(payload, isNewConfig, configId);
       navigate("/dashboard/configurations");
     } catch (e) {
       console.error("Save failed:", e);
@@ -420,6 +466,7 @@ const ConfigEditor = ({ isDarkMode = false }) => {
           id: Date.now(),
           label: `Phase ${prev.length + 1}`,
           config: makeDefaultConfig(),
+          gapToNext: { days: 0, hours: 0, minutes: 0 },
         },
       ];
       return next;
@@ -572,7 +619,17 @@ const ConfigEditor = ({ isDarkMode = false }) => {
               placeholder="e.g., Seedling, Vegetative, Bloom"
             />
           </div>
+          <style jsx>{`
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
 
+            input[type="number"] {
+              -moz-appearance: textfield;
+            }
+          `}</style>
           {/* Gap to Next: Days / Hours / Minutes */}
           {(() => {
             const g = phases[activePhaseIdx]?.gapToNext || {
